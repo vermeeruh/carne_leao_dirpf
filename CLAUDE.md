@@ -25,6 +25,21 @@ pip install -r requirements.txt
 
 There is no build step, test suite, or linter configured.
 
+## Template
+
+`templates/input_template.xlsx` is a committed blank workbook with all four input sheets pre-formatted. Users copy it to `data/input_YEAR.xlsx` before filling in data. To regenerate it (e.g. after adding new sheets or columns):
+
+```bash
+python -c "
+from spreadsheet import create_template
+from assets import add_asset_sheets_to_template
+create_template('templates/input_template.xlsx', 2024)
+add_asset_sheets_to_template('templates/input_template.xlsx', 2024)
+"
+```
+
+`data/` is gitignored (personal financial data); `templates/` is committed (blank reference only).
+
 ## Architecture
 
 Four modules with clear separation of concerns:

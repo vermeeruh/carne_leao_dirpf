@@ -1,6 +1,8 @@
 # Input/output spreadsheets (contain personal financial data)
 data/
 
+# Keep templates/ committed (blank reference files only)
+
 # Exchange rate cache
 cache/
 

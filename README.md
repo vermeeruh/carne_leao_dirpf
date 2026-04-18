@@ -16,15 +16,25 @@ pip install -r requirements.txt
 
 ## Quickstart
 
-```bash
-# First run — creates the input template
-python main.py --year 2024
+A blank template is included in the repo at `templates/input_template.xlsx`. Copy it to the `data/` folder and rename it before filling in your data:
 
-# Fill in data/input_2024.xlsx, then run again
+```bash
+cp templates/input_template.xlsx data/input_2024.xlsx
+# Fill in data/input_2024.xlsx, then run:
+python main.py --year 2024
+```
+
+Alternatively, let the tool generate the template for you on first run:
+
+```bash
+python main.py --year 2024   # exits after creating data/input_2024.xlsx
+# Fill in data/input_2024.xlsx, then run again:
 python main.py --year 2024
 ```
 
 Output is written to `data/output_YEAR.xlsx`. Exchange rates are cached in `cache/ptax_cache.json` so subsequent runs are instant.
+
+> **Note:** `data/` is excluded from git to protect personal financial data. Only the blank template in `templates/` is committed.
 
 ## Input spreadsheet
 
