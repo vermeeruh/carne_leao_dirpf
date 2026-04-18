@@ -1,0 +1,20 @@
+# Input/output spreadsheets (contain personal financial data)
+data/
+
+# Exchange rate cache
+cache/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Claude Code internal
+.claude/
