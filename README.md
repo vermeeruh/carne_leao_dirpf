@@ -125,7 +125,7 @@ If a rate is unavailable on the target date (weekend/holiday), the tool falls ba
 ## Command-line options
 
 ```
-python main.py [--year YEAR] [--input FILE] [--output FILE]
+python main.py [--year YEAR] [--input FILE] [--output FILE] [--version]
 ```
 
 | Option | Default | Description |
@@ -133,6 +133,7 @@ python main.py [--year YEAR] [--input FILE] [--output FILE]
 | `--year YEAR` | Current calendar year | Tax year to process. Controls default file names and year-specific labels (e.g. balance date in bank account sheet). |
 | `--input FILE` | `data/input_YEAR.xlsx` | Path to the filled-in input spreadsheet. |
 | `--output FILE` | `data/output_YEAR.xlsx` | Path where the output spreadsheet is written. Created or overwritten on each run. |
+| `--version` | — | Print version number and exit. |
 
 **Examples**
 

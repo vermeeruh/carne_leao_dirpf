@@ -8,6 +8,8 @@ Usage:
   python main.py --output out.xlsx # custom output path
   python main.py --year 2024       # tax year (default: current year)
 """
+__version__ = '1.0.0'
+
 import argparse
 import sys
 from datetime import datetime
@@ -37,6 +39,7 @@ def main():
     parser = argparse.ArgumentParser(
         description='Belgian payslip EUR→BRL converter for Carnê-Leão and DIRPF'
     )
+    parser.add_argument('--version', action='version', version=f'%(prog)s {__version__}')
     parser.add_argument('--input',  default=None,
                         help='Path to input spreadsheet (default: data/input_YEAR.xlsx)')
     parser.add_argument('--output', default=None,
