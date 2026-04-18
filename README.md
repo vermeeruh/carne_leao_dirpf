@@ -125,12 +125,31 @@ If a rate is unavailable on the target date (weekend/holiday), the tool falls ba
 ## Command-line options
 
 ```
-python main.py [--input FILE] [--output FILE] [--year YEAR]
-
-  --input   Path to input spreadsheet  (default: data/input_YEAR.xlsx)
-  --output  Path to output spreadsheet (default: data/output_YEAR.xlsx)
-  --year    Tax year                   (default: current year)
+python main.py [--year YEAR] [--input FILE] [--output FILE]
 ```
+
+| Option | Default | Description |
+|---|---|---|
+| `--year YEAR` | Current calendar year | Tax year to process. Controls default file names and year-specific labels (e.g. balance date in bank account sheet). |
+| `--input FILE` | `data/input_YEAR.xlsx` | Path to the filled-in input spreadsheet. |
+| `--output FILE` | `data/output_YEAR.xlsx` | Path where the output spreadsheet is written. Created or overwritten on each run. |
+
+**Examples**
+
+```bash
+# Process the current year using default file names
+python main.py
+
+# Process a specific past year
+python main.py --year 2023
+
+# Use custom file paths (useful when managing multiple scenarios)
+python main.py --year 2024 --input ~/tax/belgium_2024.xlsx --output ~/tax/output_2024.xlsx
+```
+
+**First-run behaviour**
+
+If `--input` does not exist, the tool creates a blank template at that path and exits. Fill it in and re-run. Alternatively, copy `templates/input_template.xlsx` to `data/input_YEAR.xlsx` and fill it in before the first run.
 
 ## Data sources
 
