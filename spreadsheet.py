@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 from openpyxl import Workbook
-from openpyxl.styles import Alignment, Font, PatternFill
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
 
@@ -44,12 +44,30 @@ _HEADER_FONT  = Font(bold=True, color='FFFFFF')
 _HEADER_FILL  = PatternFill(fill_type='solid', fgColor='1F4E79')
 _DESC_FONT    = Font(italic=True, color='595959')
 _DESC_FILL    = PatternFill(fill_type='solid', fgColor='D9E1F2')
+_SUBHEAD_FONT = Font(bold=True, color='1F4E79')
 _ALT_FILL     = PatternFill(fill_type='solid', fgColor='F2F2F2')
 _CENTER       = Alignment(horizontal='center')
 _BRL_FMT      = 'R$ #,##0.00'
 _EUR_FMT      = '#,##0.00'
 _RATE_FMT     = '0.0000'
 _DATE_FMT     = 'DD/MM/YYYY'
+
+_BORDER_DARK  = '1F4E79'
+_BORDER_LIGHT = 'B4C7E7'
+_THICK_SIDE   = Side(border_style='medium', color=_BORDER_DARK)
+_THIN_SIDE    = Side(border_style='thin',   color=_BORDER_LIGHT)
+
+
+def _apply_group_box(ws, r1: int, r2: int, c1: int, c2: int, header_sep_row: int = 2):
+    """Draw a thick outer border, thin inner verticals, and a thin band around the sub-header row."""
+    for r in range(r1, r2 + 1):
+        for c in range(c1, c2 + 1):
+            cell = ws.cell(row=r, column=c)
+            top    = _THICK_SIDE if r == r1 else (_THIN_SIDE if r == header_sep_row else None)
+            bottom = _THICK_SIDE if r == r2 else (_THIN_SIDE if r == header_sep_row else None)
+            left   = _THICK_SIDE if c == c1 else _THIN_SIDE
+            right  = _THICK_SIDE if c == c2 else _THIN_SIDE
+            cell.border = Border(top=top, bottom=bottom, left=left, right=right)
 
 
 # ---------------------------------------------------------------------------
@@ -227,69 +245,100 @@ def write_output(df: pd.DataFrame, path: str, year: int):
     ws = wb.active
     ws.title = f'Carne_Leao_{year}'
 
-    out_headers = [
-        'Mes',
-        'Rendimentos_Salario_BRL',
-        'Rendimentos_Opcoes_BRL',
-        'Rendimentos_Vakantiegeld_BRL',
-        'Rendimentos_13e_Maand_BRL',
-        'Deducao_Prev_Social_Salario_BRL',
-        'Deducao_Prev_Social_13e_Maand_BRL',
-        'Imposto_Retido_Salario_BRL',
-        'Imposto_Retido_Opcoes_BRL',
-        'Imposto_Retido_Vakantiegeld_BRL',
-        'Imposto_Retido_13e_Maand_BRL',
-        'ECB_EUR_USD',
-        'BCB_USD_BRL_Compra',
-        'ECB_Data',
-        'BCB_Data',
-        'Salario_Liquido_BRL',
-        'Base_de_Calculo_BRL',
-        'Observacoes',
-    ]
-    col_widths = [6, 28, 26, 30, 28, 34, 36, 30, 28, 32, 30, 14, 22, 14, 14, 24, 26, 42]
-    col_fmts   = [
-        None,
-        _BRL_FMT, _BRL_FMT, _BRL_FMT, _BRL_FMT,
-        _BRL_FMT, _BRL_FMT,
-        _BRL_FMT, _BRL_FMT, _BRL_FMT, _BRL_FMT,
-        _RATE_FMT, _RATE_FMT,
-        _DATE_FMT, _DATE_FMT,
-        _BRL_FMT, _BRL_FMT, None,
-    ]
+    # Per-item groups: each income type gets 5 columns boxed together.
+    item_sub = ['Rendimento', 'Prev.Social', 'Tributavel', 'Imp.Retido', 'Netto']
+    item_w   = [14, 14, 14, 14, 14]
+    item_fmt = [_BRL_FMT] * 5
 
-    for i, (h, w) in enumerate(zip(out_headers, col_widths), 1):
-        cell = ws.cell(row=1, column=i, value=h)
-        cell.font = _HEADER_FONT
-        cell.fill = _HEADER_FILL
-        cell.alignment = _CENTER
-        ws.column_dimensions[get_column_letter(i)].width = w
-
-    data_cols = [
-        'Mes',
-        'rendimentos_brl', 'rendimentos_opcoes_brl',
-        'rendimentos_vakantiegeld_brl', 'rendimentos_13e_maand_brl',
-        'deducao_prev_brl', 'deducao_prev_13e_maand_brl',
-        'imposto_retido_brl', 'imposto_opcoes_brl',
-        'imposto_vakantiegeld_brl', 'imposto_13e_maand_brl',
-        'ecb_eur_usd', 'bcb_usd_brl', 'ecb_date', 'bcb_date',
-        'salario_liquido_brl', 'base_calculo_brl', 'notes',
+    groups = [
+        ('Salario', item_sub, item_w,
+            ['rendimentos_brl', 'deducao_prev_brl', 'tributavel_salario_brl',
+             'imposto_retido_brl', 'netto_salario_brl'],
+            item_fmt),
+        ('Opcoes', item_sub, item_w,
+            ['rendimentos_opcoes_brl', None, 'rendimentos_opcoes_brl',
+             'imposto_opcoes_brl', 'netto_opcoes_brl'],
+            item_fmt),
+        ('Vakantiegeld', item_sub, item_w,
+            ['rendimentos_vakantiegeld_brl', None, 'rendimentos_vakantiegeld_brl',
+             'imposto_vakantiegeld_brl', 'netto_vakantiegeld_brl'],
+            item_fmt),
+        ('13e Maand', item_sub, item_w,
+            ['rendimentos_13e_maand_brl', 'deducao_prev_13e_maand_brl',
+             'tributavel_13e_maand_brl', 'imposto_13e_maand_brl',
+             'netto_13e_maand_brl'],
+            item_fmt),
+        ('Cambio', ['ECB EUR/USD', 'BCB USD/BRL', 'ECB Data', 'BCB Data'],
+            [13, 13, 12, 12],
+            ['ecb_eur_usd', 'bcb_usd_brl', 'ecb_date', 'bcb_date'],
+            [_RATE_FMT, _RATE_FMT, _DATE_FMT, _DATE_FMT]),
+        ('Resumo', ['Liquido Input', 'Base Calculo', 'Observacoes'],
+            [16, 16, 30],
+            ['salario_liquido_brl', 'base_calculo_brl', 'notes'],
+            [_BRL_FMT, _BRL_FMT, None]),
     ]
 
-    for row_idx, (_, row) in enumerate(df.iterrows(), 2):
+    # Mes column — merged A1:A2
+    for r in (1, 2):
+        c = ws.cell(row=r, column=1)
+        c.font = _HEADER_FONT
+        c.fill = _HEADER_FILL
+        c.alignment = _CENTER
+    ws.cell(row=1, column=1, value='Mes')
+    ws.merge_cells(start_row=1, end_row=2, start_column=1, end_column=1)
+    ws.column_dimensions[get_column_letter(1)].width = 6
+
+    # Group headers (row 1) + sub-headers (row 2)
+    col = 2
+    group_ranges = []
+    all_keys = ['Mes']
+    all_fmts = [None]
+
+    for label, sub_headers, widths, data_keys, fmts in groups:
+        c1 = col
+        c2 = col + len(sub_headers) - 1
+        # Row 1 — group label (merged across the group's columns, with fill on every constituent cell)
+        for c in range(c1, c2 + 1):
+            cell = ws.cell(row=1, column=c)
+            cell.font = _HEADER_FONT
+            cell.fill = _HEADER_FILL
+            cell.alignment = _CENTER
+        ws.cell(row=1, column=c1, value=label)
+        if c2 > c1:
+            ws.merge_cells(start_row=1, end_row=1, start_column=c1, end_column=c2)
+        # Row 2 — short sub-headers + column widths
+        for i, (h, w) in enumerate(zip(sub_headers, widths)):
+            sc = ws.cell(row=2, column=c1 + i, value=h)
+            sc.font = _SUBHEAD_FONT
+            sc.fill = _DESC_FILL
+            sc.alignment = _CENTER
+            ws.column_dimensions[get_column_letter(c1 + i)].width = w
+        group_ranges.append((c1, c2))
+        all_keys.extend(data_keys)
+        all_fmts.extend(fmts)
+        col = c2 + 1
+
+    # Data rows (start at row 3)
+    n_rows = len(df)
+    for row_idx, (_, row) in enumerate(df.iterrows(), 3):
         fill = _ALT_FILL if row_idx % 2 == 0 else None
-        for col_idx, (dcol, fmt) in enumerate(zip(data_cols, col_fmts), 1):
-            val = row.get(dcol)
-            # Convert date objects to string for date columns
-            if fmt == _DATE_FMT and hasattr(val, 'strftime'):
-                val = val  # openpyxl handles date objects natively
+        for col_idx, (dkey, fmt) in enumerate(zip(all_keys, all_fmts), 1):
+            val = row.get(dkey) if dkey is not None else None
             cell = ws.cell(row=row_idx, column=col_idx, value=val)
             if fmt:
                 cell.number_format = fmt
             if fill:
                 cell.fill = fill
+        # Center the Mes value
+        ws.cell(row=row_idx, column=1).alignment = _CENTER
 
-    ws.freeze_panes = 'B2'
+    # Borders: a box per group, plus one around Mes
+    last_row = 2 + n_rows
+    _apply_group_box(ws, 1, last_row, 1, 1)
+    for c1, c2 in group_ranges:
+        _apply_group_box(ws, 1, last_row, c1, c2)
+
+    ws.freeze_panes = 'B3'
 
     # Summary sheet
     ws2 = wb.create_sheet('Resumo_Anual')
@@ -358,13 +407,44 @@ def write_output(df: pd.DataFrame, path: str, year: int):
         ),
         (
             'Total Base de Calculo',
-            (df['Salario_Bruto_EUR'] + df['Opcoes_Acoes_EUR']
-             + df['Vakantiegeld_EUR'] + df['Bonus_13e_Maand_EUR']
-             - df['Previdencia_Social_EUR'] - df['Previdencia_Social_13e_Maand_EUR']).sum(),
+            (df['Salario_Bruto_EUR'].fillna(0) + df['Opcoes_Acoes_EUR'].fillna(0)
+             + df['Vakantiegeld_EUR'].fillna(0) + df['Bonus_13e_Maand_EUR'].fillna(0)
+             - df['Previdencia_Social_EUR'].fillna(0)
+             - df['Previdencia_Social_13e_Maand_EUR'].fillna(0)).sum(),
             df['base_calculo_brl'].sum(),
         ),
     ]
     for i, (label, eur_val, brl_val) in enumerate(summary_rows, 3):
+        ws2.cell(row=i, column=1, value=label).font = Font(bold=True)
+        eur_cell = ws2.cell(row=i, column=2, value=eur_val)
+        eur_cell.number_format = _EUR_FMT_SUM
+        brl_cell = ws2.cell(row=i, column=3, value=brl_val)
+        brl_cell.number_format = _BRL_FMT
+
+    # Blank row, then combined taxable income and total taxes paid
+    extra_start = 3 + len(summary_rows) + 1
+    extra_rows = [
+        (
+            'Total Tributavel (Salario + Opcoes + Vakantiegeld + 13e Maand)',
+            (df['Salario_Bruto_EUR'].fillna(0) + df['Opcoes_Acoes_EUR'].fillna(0)
+             + df['Vakantiegeld_EUR'].fillna(0) + df['Bonus_13e_Maand_EUR'].fillna(0)
+             - df['Previdencia_Social_EUR'].fillna(0)
+             - df['Previdencia_Social_13e_Maand_EUR'].fillna(0)).sum(),
+            (df['tributavel_salario_brl'] + df['rendimentos_opcoes_brl']
+             + df['rendimentos_vakantiegeld_brl']
+             + df['tributavel_13e_maand_brl']).sum(),
+        ),
+        (
+            'Total Imposto Retido (Todos)',
+            (df['Imposto_Retido_Belgica_EUR'].fillna(0)
+             + df['Imposto_Retido_Opcoes_EUR'].fillna(0)
+             + df['Imposto_Retido_Vakantiegeld_EUR'].fillna(0)
+             + df['Imposto_Retido_13e_Maand_EUR'].fillna(0)).sum(),
+            (df['imposto_retido_brl'] + df['imposto_opcoes_brl']
+             + df['imposto_vakantiegeld_brl'] + df['imposto_13e_maand_brl']).sum(),
+        ),
+    ]
+    for i, (label, eur_val, brl_val) in enumerate(extra_rows, extra_start):
         ws2.cell(row=i, column=1, value=label).font = Font(bold=True)
         eur_cell = ws2.cell(row=i, column=2, value=eur_val)
         eur_cell.number_format = _EUR_FMT_SUM
