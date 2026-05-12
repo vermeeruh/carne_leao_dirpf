@@ -28,8 +28,11 @@ def apply_conversions(df: pd.DataFrame) -> pd.DataFrame:
     Adds columns: rendimentos_brl, rendimentos_opcoes_brl,
                   rendimentos_vakantiegeld_brl, rendimentos_13e_maand_brl,
                   deducao_prev_brl, deducao_prev_13e_maand_brl,
+                  tributavel_salario_brl, tributavel_13e_maand_brl,
                   imposto_retido_brl, imposto_opcoes_brl,
                   imposto_vakantiegeld_brl, imposto_13e_maand_brl,
+                  netto_salario_brl, netto_opcoes_brl,
+                  netto_vakantiegeld_brl, netto_13e_maand_brl,
                   salario_liquido_brl, base_calculo_brl
 
     Social security rules:
@@ -41,7 +44,9 @@ def apply_conversions(df: pd.DataFrame) -> pd.DataFrame:
     """
     rendimentos, rend_opcoes, rend_vak, rend_13 = [], [], [], []
     deducoes, ded_13                             = [], []
+    trib_sal, trib_13                            = [], []
     impostos, imp_opcoes, imp_vak, imp_13        = [], [], [], []
+    netto_sal, netto_op, netto_vak, netto_13     = [], [], [], []
     liquidos, bases                              = [], []
 
     for _, row in df.iterrows():
@@ -73,6 +78,12 @@ def apply_conversions(df: pd.DataFrame) -> pd.DataFrame:
         i_vak  = _round(tax_vak * fx)
         i_13   = _round(tax_13  * fx)
         liq    = _round(liquido * fx)
+        t_sal  = _round(Decimal(str(r_sal)) - Decimal(str(d_sal)))
+        t_13   = _round(Decimal(str(r_13))  - Decimal(str(d_13)))
+        n_sal  = _round(Decimal(str(r_sal)) - Decimal(str(d_sal)) - Decimal(str(i_sal)))
+        n_op   = _round(Decimal(str(r_op))                        - Decimal(str(i_op)))
+        n_vak  = _round(Decimal(str(r_vak))                       - Decimal(str(i_vak)))
+        n_13   = _round(Decimal(str(r_13))  - Decimal(str(d_13))  - Decimal(str(i_13)))
         base   = _round(
             Decimal(str(r_sal)) + Decimal(str(r_op))
             + Decimal(str(r_vak)) + Decimal(str(r_13))
@@ -85,10 +96,16 @@ def apply_conversions(df: pd.DataFrame) -> pd.DataFrame:
         rend_13.append(r_13)
         deducoes.append(d_sal)
         ded_13.append(d_13)
+        trib_sal.append(t_sal)
+        trib_13.append(t_13)
         impostos.append(i_sal)
         imp_opcoes.append(i_op)
         imp_vak.append(i_vak)
         imp_13.append(i_13)
+        netto_sal.append(n_sal)
+        netto_op.append(n_op)
+        netto_vak.append(n_vak)
+        netto_13.append(n_13)
         liquidos.append(liq)
         bases.append(base)
 
@@ -99,10 +116,16 @@ def apply_conversions(df: pd.DataFrame) -> pd.DataFrame:
     df['rendimentos_13e_maand_brl']   = rend_13
     df['deducao_prev_brl']            = deducoes
     df['deducao_prev_13e_maand_brl']  = ded_13
+    df['tributavel_salario_brl']      = trib_sal
+    df['tributavel_13e_maand_brl']    = trib_13
     df['imposto_retido_brl']          = impostos
     df['imposto_opcoes_brl']          = imp_opcoes
     df['imposto_vakantiegeld_brl']    = imp_vak
     df['imposto_13e_maand_brl']       = imp_13
+    df['netto_salario_brl']           = netto_sal
+    df['netto_opcoes_brl']            = netto_op
+    df['netto_vakantiegeld_brl']      = netto_vak
+    df['netto_13e_maand_brl']         = netto_13
     df['salario_liquido_brl']         = liquidos
     df['base_calculo_brl']            = bases
     return df
