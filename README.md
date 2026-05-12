@@ -56,7 +56,7 @@ The template has four sheets. All sheets except `Salarios_EUR` are optional — 
 | `Bonus_13e_Maand_EUR` | 13e maand gross (optional) |
 | `Previdencia_Social_13e_Maand_EUR` | RSZ/ONSS on 13e maand (optional) |
 | `Imposto_Retido_13e_Maand_EUR` | Tax withheld on 13e maand (optional) |
-| `Salario_Liquido_EUR` | Netto loon — for self-verification only |
+| `Salario_Liquido_EUR` | Combined netto loon across all income types — for self-verification only |
 
 Leave rows blank for months with no salary.
 
@@ -96,8 +96,8 @@ In DIRPF: declare under **Bens e Direitos**, código 89 (criptoativos).
 | `Nome` | Cryptocurrency name (e.g. Bitcoin) |
 | `Ticker` | Symbol (e.g. BTC) |
 | `Quantidade` | Quantity held at 31 Dec |
-| `Custo_Aquisicao_EUR` | Total acquisition cost — EUR |
-| `Data_Aquisicao` | Approximate acquisition date — DD/MM/YYYY |
+| `Custo_Aquisicao_EUR` | Total acquisition cost — EUR (amount paid, not market value) |
+| `Data_Aquisicao` | Representative/average acquisition date — DD/MM/YYYY |
 
 ## Output spreadsheet
 
@@ -105,9 +105,13 @@ In DIRPF: declare under **Bens e Direitos**, código 89 (criptoativos).
 |---|---|
 | `Carne_Leao_YEAR` | Monthly BRL values with exchange rates — enter into Carnê-Leão website |
 | `Resumo_Anual` | Annual totals in EUR and BRL |
-| `Bens_Direitos_YEAR` | Bank account BRL values for DIRPF |
-| `Ganhos_Capital_YEAR` | Per-asset BRL gain/loss for DIRPF |
-| `Criptomoedas_YEAR` | Crypto BRL cost basis for DIRPF |
+| `Bens_Direitos_YEAR` | Bank account BRL values for DIRPF (foreign bank accounts only — código 61/62) |
+| `Ganhos_Capital_YEAR` | Per-asset BRL gain/loss for DIRPF, with totals row |
+| `Criptomoedas_YEAR` | Crypto BRL cost basis for DIRPF (Bens e Direitos código 89) |
+
+`Carne_Leao_YEAR` is laid out as one row per month, with column groups per income type — **Salario**, **Opcoes**, **Vakantiegeld**, **13e Maand** — each containing `Rendimento`, `Prev.Social`, `Tributavel`, `Imp.Retido`, `Netto`. Two trailing groups (`Cambio`, `Resumo`) carry the per-month exchange rates and observations.
+
+`Resumo_Anual` totals each income type's rendimentos, deducoes (prev. social), and imposto retido, plus a combined `Total Tributavel` (all income − prev. social) and `Total Imposto Retido (Todos)`.
 
 ## Exchange rate methodology
 

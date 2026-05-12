@@ -27,14 +27,15 @@ There is no build step, test suite, or linter configured.
 
 ## Template
 
-`templates/input_template.xlsx` is a committed blank workbook with all four input sheets pre-formatted. Users copy it to `data/input_YEAR.xlsx` before filling in data. To regenerate it (e.g. after adding new sheets or columns):
+`templates/input_template.xlsx` is a committed blank workbook with all four input sheets pre-formatted (`Salarios_EUR`, `Contas_Bancarias`, `Ganhos_Capital`, `Criptomoedas`). Users copy it to `data/input_YEAR.xlsx` before filling in data. To regenerate it (e.g. after adding new sheets or columns), pick any tax year as the label-source — only the bank-account and crypto sheets embed the year in their description row:
 
 ```bash
 python -c "
 from spreadsheet import create_template
 from assets import add_asset_sheets_to_template
-create_template('templates/input_template.xlsx', 2024)
-add_asset_sheets_to_template('templates/input_template.xlsx', 2024)
+YEAR = 2026
+create_template('templates/input_template.xlsx', YEAR)
+add_asset_sheets_to_template('templates/input_template.xlsx', YEAR)
 "
 ```
 
@@ -42,13 +43,13 @@ add_asset_sheets_to_template('templates/input_template.xlsx', 2024)
 
 ## Architecture
 
-Four modules with clear separation of concerns:
+Five modules with clear separation of concerns:
 
-- **`main.py`** — CLI entry point and orchestrator. Runs salary flow (steps 1–5: template → read → fetch rates → convert → write) then delegates to `_process_assets()` for optional DIRPF asset sheets.
-- **`spreadsheet.py`** — All salary-specific Excel I/O via openpyxl. Creates `Salarios_EUR` input sheet, reads and validates it, writes `Carne_Leao_YEAR` + `Resumo_Anual` output sheets. Handles European date (DD/MM/YYYY) and number formats.
-- **`converter.py`** — Pure salary calculation using `Decimal` for precision. Applies `EUR × ECB_EUR_USD × BCB_USD_BRL = BRL` per row. RSZ deducted from salary and 13e maand; not from stock options or vakantiegeld.
+- **`main.py`** — CLI entry point and orchestrator. Seven numbered steps: (1) create template if input missing → (2) read salary input → (3) fetch salary rates → (4) convert → (5) write salary output → (6) `_process_assets()` for optional DIRPF asset sheets → (7) print salary summary table and Receita Federal field mapping.
+- **`spreadsheet.py`** — All salary-specific Excel I/O via openpyxl. Creates `Salarios_EUR` input sheet, reads and validates it, writes `Carne_Leao_YEAR` (grouped column layout: Salario / Opcoes / Vakantiegeld / 13e Maand / Cambio / Resumo) + `Resumo_Anual` output sheets. Handles European date (DD/MM/YYYY) and number formats; tolerates older templates missing the optional stock-options / vakantiegeld / 13e maand columns.
+- **`converter.py`** — Pure salary calculation using `Decimal` for precision. Applies `EUR × ECB_EUR_USD × BCB_USD_BRL = BRL` per row, producing per-income-type `rendimentos_*_brl`, `deducao_prev_*_brl`, `tributavel_*_brl`, `imposto_*_brl`, `netto_*_brl` columns plus `salario_liquido_brl` and `base_calculo_brl`. RSZ is deducted from salary and 13e maand only; not from stock options or vakantiegeld.
 - **`ptax.py`** — Exchange rate fetching, caching (`cache/ptax_cache.json`), retry logic, up-to-7-day lookback for weekends/holidays. Two public functions: `get_rates()` (salary rule) and `get_spot_rates()` (spot date rule for assets).
-- **`assets.py`** — All DIRPF asset logic: template sheet builders (`add_*_sheet`), readers, converters, and output writers for bank accounts, capital gains, and crypto.
+- **`assets.py`** — All DIRPF asset logic: template sheet builders (`add_*_sheet`, plus the umbrella `add_asset_sheets_to_template`), readers, converters, and output writers for bank accounts, capital gains, and crypto.
 
 ## Two exchange rate rules
 
